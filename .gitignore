@@ -1,0 +1,6 @@
+build/
+build-qt/
+cmake-build-*/
+target/
+*.user
+*.dbf~
