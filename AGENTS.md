@@ -19,10 +19,12 @@ Keep parsing and file-writing code outside `MainWindow` so it can be tested with
 
 Run commands from the repository root:
 
-- `cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -G Ninja` - configure the Qt build.
+- `cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/home/z/code/tv/qt6-static -G Ninja` - configure with static Qt6.
 - `cmake --build build` - compile the app.
 - `./build/tableview` - launch the app on Linux.
 - `./build/tableview path/to/file.dbf` - launch and open a file.
+
+Static Qt6 (6.8.3, qtbase only) is installed at `qt6-static/`. It was built with `-static -release -no-opengl -no-icu -no-glib` and bundled zlib, pcre2, libpng, libjpeg, harfbuzz. The project also statically links zlib, libgcc, and libstdc++.
 
 ## Coding Style & Naming Conventions
 

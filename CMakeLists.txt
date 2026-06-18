@@ -7,6 +7,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
+
+get_target_property(_qt_type Qt6::Core TYPE)
+if(_qt_type STREQUAL "STATIC_LIBRARY")
+    set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
+endif()
+
 find_package(ZLIB REQUIRED)
 
 qt_add_executable(tableview
@@ -36,6 +42,10 @@ if(WIN32)
 endif()
 
 target_link_libraries(tableview PRIVATE Qt6::Widgets ZLIB::ZLIB)
+
+if(_qt_type STREQUAL "STATIC_LIBRARY" AND NOT WIN32)
+    target_link_options(tableview PRIVATE -static-libgcc -static-libstdc++)
+endif()
 
 if(WIN32)
     target_compile_definitions(tableview PRIVATE NOMINMAX)

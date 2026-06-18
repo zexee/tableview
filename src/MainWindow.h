@@ -39,6 +39,8 @@ private:
     void updateCsvControls();
     QChar currentDelimiter() const;
     bool maybeSave();
+    void showCellOverlay(const QModelIndex &index);
+    void hideCellOverlay();
 
     TableModel *m_model = nullptr;
     QTableView *m_view = nullptr;
@@ -50,4 +52,5 @@ private:
     QLabel *m_encodingLabel = nullptr;
     QLabel *m_cellLabel = nullptr;
     QLabel *m_pathLabel = nullptr;
+    QLabel *m_cellOverlay = nullptr;
 };

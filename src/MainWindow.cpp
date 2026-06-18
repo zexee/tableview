@@ -26,7 +26,6 @@
 #include <QStatusBar>
 #include <QTableView>
 #include <QToolBar>
-#include <QToolTip>
 #include <stdexcept>
 
 namespace {
@@ -85,6 +84,15 @@ void MainWindow::createUi()
     m_view->horizontalHeader()->setSectionsClickable(true);
     m_view->verticalHeader()->setDefaultSectionSize(24);
     m_view->viewport()->installEventFilter(this);
+    m_view->viewport()->setMouseTracking(true);
+
+    m_cellOverlay = new QLabel(m_view->viewport());
+    m_cellOverlay->hide();
+    m_cellOverlay->setAutoFillBackground(true);
+    m_cellOverlay->setFrameShape(QFrame::Box);
+    m_cellOverlay->setContentsMargins(4, 0, 4, 0);
+    m_cellOverlay->setAttribute(Qt::WA_TransparentForMouseEvents);
+
     setCentralWidget(m_view);
 
     auto *toolbar = addToolBar(QStringLiteral("Main"));
@@ -235,7 +243,8 @@ void MainWindow::reloadCurrent()
         else
             table = readXlsxFile(path);
         m_model->setTable(std::move(table));
-        m_model->table().encoding = encoding;
+        clearFilter();
+        fitContent();
         updateCsvControls();
         updateStatus();
         updateCurrentCell();
@@ -297,6 +306,7 @@ void MainWindow::clearFilter()
 
 void MainWindow::fitContent()
 {
+    m_view->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
     m_view->resizeColumnsToContents();
 }
 
@@ -386,28 +396,51 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
-    if (watched == m_view->viewport() && event->type() == QEvent::ToolTip) {
-        auto *help = static_cast<QHelpEvent *>(event);
-        const QModelIndex index = m_view->indexAt(help->pos());
-        if (!index.isValid()) {
-            QToolTip::hideText();
+    if (watched == m_view->viewport()) {
+        if (event->type() == QEvent::ToolTip) {
+            auto *help = static_cast<QHelpEvent *>(event);
+            showCellOverlay(m_view->indexAt(help->pos()));
             return true;
         }
-
-        const QString value = m_model->data(index, Qt::DisplayRole).toString();
-        if (value.isEmpty()) {
-            QToolTip::hideText();
-            return true;
+        if (event->type() == QEvent::MouseMove
+            || event->type() == QEvent::Leave
+            || event->type() == QEvent::MouseButtonPress
+            || event->type() == QEvent::Wheel) {
+            hideCellOverlay();
         }
+    }
+    return QMainWindow::eventFilter(watched, event);
+}
 
-        const QRect rect = m_view->visualRect(index);
-        const int textWidth = QFontMetrics(m_view->font()).horizontalAdvance(value);
-        if (textWidth > rect.width() - 8)
-            QToolTip::showText(help->globalPos(), value, m_view, rect);
-        else
-            QToolTip::hideText();
-        return true;
+void MainWindow::showCellOverlay(const QModelIndex &index)
+{
+    if (!index.isValid()) {
+        hideCellOverlay();
+        return;
     }
 
-    return QMainWindow::eventFilter(watched, event);
+    const QString value = m_model->data(index, Qt::DisplayRole).toString();
+    if (value.isEmpty()) {
+        hideCellOverlay();
+        return;
+    }
+
+    const QRect rect = m_view->visualRect(index);
+    const QFontMetrics fm(m_view->font());
+    const int textWidth = fm.horizontalAdvance(value);
+    if (textWidth <= rect.width() - 8) {
+        hideCellOverlay();
+        return;
+    }
+
+    m_cellOverlay->setText(value);
+    m_cellOverlay->setFont(m_view->font());
+    m_cellOverlay->setGeometry(rect.x(), rect.y(), textWidth + 12, rect.height());
+    m_cellOverlay->show();
+    m_cellOverlay->raise();
+}
+
+void MainWindow::hideCellOverlay()
+{
+    m_cellOverlay->hide();
 }
