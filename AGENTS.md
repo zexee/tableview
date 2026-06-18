@@ -32,6 +32,13 @@ Use modern C++17 and Qt idioms. Keep modules small and name functions by behavio
 
 Use `PascalCase` for classes and types, `camelCase` for functions and local variables, and `m_` prefixes for private member fields. Use enum classes for file formats and encodings instead of stringly typed state.
 
+## UI Behavior
+
+- "Fit content" 和 "Fit window" 都是一次性操作，执行后列仍然保持 Interactive 模式，用户可以手动拖动调整列宽。
+- "Fit content" 按内容宽度自适应每列。
+- "Fit window" 按比例缩放现有列宽，使总宽度刚好填满视口，不改变列的相对比例。
+- 当单元格内容被截断时，鼠标悬停后显示一个 overlay 覆盖在该单元格上方展示完整内容，而不是弹出传统 tooltip。
+
 ## Testing Guidelines
 
 Add tests for readers and filters once a Qt test target is introduced. Prefer deterministic temp-file tests for DBF/CSV/XLSX parsing and DBF round-tripping.

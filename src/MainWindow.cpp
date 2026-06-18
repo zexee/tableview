@@ -7,6 +7,7 @@
 #include "XlsxReader.h"
 
 #include <QAction>
+#include <QApplication>
 #include <QCheckBox>
 #include <QCloseEvent>
 #include <QComboBox>
@@ -22,13 +23,48 @@
 #include <QLineEdit>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QPainter>
 #include <QSignalBlocker>
 #include <QStatusBar>
+#include <QStyledItemDelegate>
 #include <QTableView>
 #include <QToolBar>
 #include <stdexcept>
 
 namespace {
+
+class CellDelegate : public QStyledItemDelegate {
+public:
+    using QStyledItemDelegate::QStyledItemDelegate;
+
+    void paint(QPainter *painter, const QStyleOptionViewItem &option,
+               const QModelIndex &index) const override
+    {
+        QStyleOptionViewItem opt = option;
+        initStyleOption(&opt, index);
+
+        const QString text = opt.text;
+        opt.text.clear();
+
+        QStyle *style = opt.widget ? opt.widget->style() : QApplication::style();
+        style->drawControl(QStyle::CE_ItemViewItem, &opt, painter, opt.widget);
+
+        if (text.isEmpty())
+            return;
+
+        QRect textRect = style->subElementRect(QStyle::SE_ItemViewItemText, &opt, opt.widget);
+        textRect.adjust(4, 0, -4, 0);
+
+        const QString elided = opt.fontMetrics.elidedText(text, Qt::ElideRight, textRect.width());
+
+        painter->save();
+        painter->setPen(opt.palette.color(
+            opt.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
+        painter->setFont(opt.font);
+        painter->drawText(textRect, opt.displayAlignment, elided);
+        painter->restore();
+    }
+};
 
 FileFormat formatForPath(const QString &path)
 {
@@ -75,6 +111,7 @@ void MainWindow::createUi()
     m_model = new TableModel(this);
     m_view = new QTableView(this);
     m_view->setModel(m_model);
+    m_view->setItemDelegate(new CellDelegate(m_view));
     connect(m_view->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::updateCurrentCell);
     m_view->setAlternatingRowColors(true);
     m_view->setSelectionBehavior(QAbstractItemView::SelectItems);
@@ -312,7 +349,26 @@ void MainWindow::fitContent()
 
 void MainWindow::fitWindow()
 {
-    m_view->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    auto *header = m_view->horizontalHeader();
+    const int cols = m_model->columnCount();
+    if (cols == 0)
+        return;
+
+    header->setSectionResizeMode(QHeaderView::Interactive);
+
+    int totalOriginal = 0;
+    QVector<int> widths(cols);
+    for (int i = 0; i < cols; ++i) {
+        widths[i] = header->sectionSize(i);
+        totalOriginal += widths[i];
+    }
+    if (totalOriginal == 0)
+        return;
+
+    const int available = m_view->viewport()->width();
+    const double ratio = static_cast<double>(available) / totalOriginal;
+    for (int i = 0; i < cols; ++i)
+        header->resizeSection(i, std::clamp(static_cast<int>(std::round(widths[i] * ratio)), 20, 800));
 }
 
 void MainWindow::toggleDeleteMark()
