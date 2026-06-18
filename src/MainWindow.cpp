@@ -24,6 +24,7 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QPainter>
+#include <QSettings>
 #include <QSignalBlocker>
 #include <QStatusBar>
 #include <QStyledItemDelegate>
@@ -119,6 +120,8 @@ void MainWindow::createUi()
     m_view->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::EditKeyPressed | QAbstractItemView::SelectedClicked);
     m_view->horizontalHeader()->setSectionsMovable(true);
     m_view->horizontalHeader()->setSectionsClickable(true);
+    m_view->setSortingEnabled(true);
+    m_view->horizontalHeader()->setSortIndicatorClearable(true);
     m_view->verticalHeader()->setDefaultSectionSize(24);
     m_view->viewport()->installEventFilter(this);
     m_view->viewport()->setMouseTracking(true);
@@ -194,6 +197,8 @@ void MainWindow::createActions()
     fileMenu->addAction(QStringLiteral("Open..."), QKeySequence::Open, this, &MainWindow::openFileDialog);
     fileMenu->addAction(QStringLiteral("Save"), QKeySequence::Save, this, &MainWindow::saveFile);
     fileMenu->addAction(QStringLiteral("Export CSV..."), this, &MainWindow::exportCsv);
+    m_recentMenu = fileMenu->addMenu(QStringLiteral("Recent Files"));
+    updateRecentMenu();
     fileMenu->addSeparator();
     fileMenu->addAction(QStringLiteral("Exit"), this, &QWidget::close);
 
@@ -248,11 +253,13 @@ void MainWindow::openPath(const QString &path)
 
         m_model->setTable(std::move(table));
         clearFilter();
+        m_view->horizontalHeader()->setSortIndicator(-1, Qt::AscendingOrder);
         fitContent();
         updateCsvControls();
         updateStatus();
         updateCurrentCell();
         setWindowTitle(QStringLiteral("tableview - %1").arg(QFileInfo(path).fileName()));
+        addRecentFile(path);
     } catch (const std::exception &ex) {
         QMessageBox::warning(this, QStringLiteral("Open failed"), QString::fromUtf8(ex.what()));
     }
@@ -499,4 +506,39 @@ void MainWindow::showCellOverlay(const QModelIndex &index)
 void MainWindow::hideCellOverlay()
 {
     m_cellOverlay->hide();
+}
+
+void MainWindow::addRecentFile(const QString &path)
+{
+    const QString absolute = QFileInfo(path).absoluteFilePath();
+    QSettings settings;
+    QStringList recent = settings.value(QStringLiteral("recentFiles")).toStringList();
+    recent.removeAll(absolute);
+    recent.prepend(absolute);
+    while (recent.size() > 10)
+        recent.removeLast();
+    settings.setValue(QStringLiteral("recentFiles"), recent);
+    updateRecentMenu();
+}
+
+void MainWindow::updateRecentMenu()
+{
+    m_recentMenu->clear();
+    const QStringList recent = QSettings().value(QStringLiteral("recentFiles")).toStringList();
+    if (recent.isEmpty()) {
+        m_recentMenu->addAction(QStringLiteral("(empty)"))->setEnabled(false);
+        return;
+    }
+    for (const QString &filePath : recent) {
+        auto *action = m_recentMenu->addAction(QFileInfo(filePath).fileName());
+        action->setToolTip(filePath);
+        connect(action, &QAction::triggered, this, [this, filePath]() {
+            if (!maybeSave())
+                return;
+            if (QFileInfo::exists(filePath))
+                openPath(filePath);
+            else
+                statusBar()->showMessage(QStringLiteral("File not found: %1").arg(filePath), 5000);
+        });
+    }
 }

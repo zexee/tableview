@@ -2,6 +2,8 @@
 
 #include <QBrush>
 
+#include <algorithm>
+
 TableModel::TableModel(QObject *parent)
     : QAbstractTableModel(parent)
 {
@@ -156,5 +158,39 @@ bool TableModel::setData(const QModelIndex &index, const QVariant &value, int ro
     m_modified = true;
     emit dataChanged(index, index);
     return true;
+}
+
+void TableModel::sort(int column, Qt::SortOrder order)
+{
+    if (!m_hasTable)
+        return;
+
+    beginResetModel();
+    if (column < 0 || column >= m_table.columns.size()) {
+        std::sort(m_visibleRows.begin(), m_visibleRows.end());
+    } else {
+        const bool numeric = m_table.columns[column].kind == ColumnKind::Number;
+        std::stable_sort(m_visibleRows.begin(), m_visibleRows.end(),
+            [this, column, order, numeric](int a, int b) {
+                const QString &va = a < m_table.rows.size() ? m_table.rows[a].values[column] : QString();
+                const QString &vb = b < m_table.rows.size() ? m_table.rows[b].values[column] : QString();
+
+                if (va.isEmpty() && vb.isEmpty())
+                    return false;
+                if (va.isEmpty())
+                    return order == Qt::DescendingOrder;
+                if (vb.isEmpty())
+                    return order == Qt::AscendingOrder;
+
+                bool less;
+                if (numeric)
+                    less = va.toDouble() < vb.toDouble();
+                else
+                    less = QString::compare(va, vb, Qt::CaseInsensitive) < 0;
+
+                return order == Qt::AscendingOrder ? less : !less;
+            });
+    }
+    endResetModel();
 }
 

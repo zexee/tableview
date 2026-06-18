@@ -5,6 +5,8 @@
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+    app.setOrganizationName(QStringLiteral("tableview"));
+    app.setApplicationName(QStringLiteral("tableview"));
     MainWindow window(argc > 1 ? QString::fromLocal8Bit(argv[1]) : QString());
     window.show();
     return app.exec();

@@ -5,6 +5,7 @@
 #include <QMainWindow>
 
 class QEvent;
+class QMenu;
 class QCheckBox;
 class QComboBox;
 class QLabel;
@@ -41,6 +42,8 @@ private:
     bool maybeSave();
     void showCellOverlay(const QModelIndex &index);
     void hideCellOverlay();
+    void addRecentFile(const QString &path);
+    void updateRecentMenu();
 
     TableModel *m_model = nullptr;
     QTableView *m_view = nullptr;
@@ -53,4 +56,5 @@ private:
     QLabel *m_cellLabel = nullptr;
     QLabel *m_pathLabel = nullptr;
     QLabel *m_cellOverlay = nullptr;
+    QMenu *m_recentMenu = nullptr;
 };
