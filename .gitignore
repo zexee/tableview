@@ -4,3 +4,8 @@ cmake-build-*/
 target/
 *.user
 *.dbf~
+
+qt6-src/
+qt6-build/
+qt6-src.tar.xz
+qt6-static/
