@@ -69,9 +69,9 @@ jobs:
         if: runner.os == 'Windows'
         uses: seanmiddleditch/gha-setup-ninja@v5
 
-      - name: Cache static Qt
+      - name: Restore static Qt cache
         id: cache-qt
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: qt6-static
           key: ${{ runner.os }}-qt${{ env.QT_VERSION }}-static-${{ hashFiles('scripts/build-static-qt.sh', 'scripts/build-static-qt.ps1') }}
@@ -84,6 +84,13 @@ jobs:
         if: steps.cache-qt.outputs.cache-hit != 'true' && runner.os == 'Windows'
         shell: pwsh
         run: ./scripts/build-static-qt.ps1
+
+      - name: Save static Qt cache
+        if: steps.cache-qt.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: qt6-static
+          key: ${{ runner.os }}-qt${{ env.QT_VERSION }}-static-${{ hashFiles('scripts/build-static-qt.sh', 'scripts/build-static-qt.ps1') }}
 
       - name: Configure
         shell: bash
