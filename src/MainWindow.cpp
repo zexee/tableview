@@ -355,11 +355,11 @@ void MainWindow::fitContent()
 
     const QFontMetrics fm(m_view->font());
     const int colCount = m_model->columnCount();
-    const int sample = std::min(m_model->rowCount(), 1000);
+    const int rowCount = m_model->rowCount();
 
     for (int c = 0; c < colCount; ++c) {
         int maxWidth = fm.horizontalAdvance(m_model->headerData(c, Qt::Horizontal).toString());
-        for (int r = 0; r < sample; ++r) {
+        for (int r = 0; r < rowCount; ++r) {
             const QString text = m_model->data(m_model->index(r, c), Qt::DisplayRole).toString();
             maxWidth = std::max(maxWidth, fm.horizontalAdvance(text));
         }
