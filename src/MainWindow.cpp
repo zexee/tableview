@@ -164,7 +164,6 @@ void MainWindow::createUi()
     toolbar->addSeparator();
     toolbar->addWidget(new QLabel(QStringLiteral("Filter")));
     m_filterEdit = new QLineEdit(this);
-    m_filterEdit->setMinimumWidth(240);
     toolbar->addWidget(m_filterEdit);
     connect(m_filterEdit, &QLineEdit::returnPressed, this, &MainWindow::applyFilter);
     toolbar->addAction(QStringLiteral("Apply"), this, &MainWindow::applyFilter);
