@@ -67,9 +67,9 @@ The workflow in `.github/workflows/ci.yml` builds on Linux, Windows, and macOS. 
 
 Pushes to `master` and pull requests build and upload per-platform binaries as artifacts. Pushing a `v*` tag also creates a GitHub Release with per-platform archives.
 
-Windows 上应用本身的 zlib 依赖通过 vcpkg 静态三元组 `x64-windows-static` 提供；若出现 CRT 不匹配的链接错误，需让静态 Qt 与 zlib 的运行时库设置保持一致。
+应用本身的 zlib 依赖优先使用系统库（Linux 用 `zlib1g-dev`）；在没有可用系统 zlib 的平台（如 Windows、macOS），CMake 会通过 `FetchContent` 自动从源码编译 zlib。
 
-On Windows the app's zlib dependency comes from the vcpkg `x64-windows-static` triplet; if you hit CRT mismatch link errors, align the static Qt and zlib runtime-library settings.
+The app's zlib dependency uses the system library when available (`zlib1g-dev` on Linux); on platforms without one (Windows, macOS) CMake builds zlib from source via `FetchContent`.
 
 ## 字体 / Fonts
 

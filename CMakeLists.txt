@@ -13,7 +13,23 @@ if(_qt_type STREQUAL "STATIC_LIBRARY")
     set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
 endif()
 
-find_package(ZLIB REQUIRED)
+find_package(ZLIB)
+if(NOT ZLIB_FOUND)
+    message(STATUS "System ZLIB not found; building zlib from source")
+    include(FetchContent)
+    set(ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    FetchContent_Declare(zlib
+        URL https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz
+        URL_HASH SHA256=9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23
+    )
+    FetchContent_MakeAvailable(zlib)
+    if(NOT TARGET ZLIB::ZLIB)
+        add_library(ZLIB::ZLIB INTERFACE IMPORTED)
+        target_link_libraries(ZLIB::ZLIB INTERFACE zlibstatic)
+        target_include_directories(ZLIB::ZLIB INTERFACE
+            "${zlib_SOURCE_DIR}" "${zlib_BINARY_DIR}")
+    endif()
+endif()
 
 qt_add_executable(tableview WIN32
     src/main.cpp
