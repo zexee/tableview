@@ -59,6 +59,10 @@ endif()
 
 target_link_libraries(tableview PRIVATE Qt6::Widgets ZLIB::ZLIB)
 
+if(APPLE)
+    target_link_libraries(tableview PRIVATE iconv)
+endif()
+
 if(_qt_type STREQUAL "STATIC_LIBRARY" AND NOT WIN32 AND NOT APPLE)
     target_link_options(tableview PRIVATE -static-libgcc -static-libstdc++)
 endif()
