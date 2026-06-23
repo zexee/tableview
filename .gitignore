@@ -9,3 +9,6 @@ qt6-src/
 qt6-build/
 qt6-src.tar.xz
 qt6-static/
+6.8.0/
+/ninja/*.exe
+/*.log

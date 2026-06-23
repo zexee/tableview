@@ -15,7 +15,7 @@ endif()
 
 find_package(ZLIB REQUIRED)
 
-qt_add_executable(tableview
+qt_add_executable(tableview WIN32
     src/main.cpp
     src/MainWindow.cpp
     src/MainWindow.h

@@ -30,6 +30,8 @@
 #include <QStyledItemDelegate>
 #include <QTableView>
 #include <QToolBar>
+#include <QRandomGenerator>
+#include <algorithm>
 #include <stdexcept>
 
 namespace {
@@ -356,9 +358,32 @@ void MainWindow::fitContent()
     const int colCount = m_model->columnCount();
     const int rowCount = m_model->rowCount();
 
+    QSet<int> rowsToMeasure;
+    const int vpHeight = m_view->viewport()->height();
+    for (int r = 0; r < rowCount; ++r) {
+        int y = m_view->rowViewportPosition(r);
+        if (y >= 0 && y < vpHeight)
+            rowsToMeasure.insert(r);
+    }
+
+    if (rowCount > rowsToMeasure.size()) {
+        QVector<int> candidates;
+        candidates.reserve(rowCount - rowsToMeasure.size());
+        for (int r = 0; r < rowCount; ++r)
+            if (!rowsToMeasure.contains(r))
+                candidates.append(r);
+
+        std::shuffle(candidates.begin(), candidates.end(), *QRandomGenerator::global());
+        int sample = std::min<int>(1000, candidates.size());
+        for (int i = 0; i < sample; ++i)
+            rowsToMeasure.insert(candidates[i]);
+    }
+
+    QVector<int> rowList(rowsToMeasure.begin(), rowsToMeasure.end());
+
     for (int c = 0; c < colCount; ++c) {
         int maxWidth = fm.horizontalAdvance(m_model->headerData(c, Qt::Horizontal).toString());
-        for (int r = 0; r < rowCount; ++r) {
+        for (int r : rowList) {
             const QString text = m_model->data(m_model->index(r, c), Qt::DisplayRole).toString();
             maxWidth = std::max(maxWidth, fm.horizontalAdvance(text));
         }
