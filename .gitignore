@@ -2,12 +2,14 @@ build/
 build-qt/
 cmake-build-*/
 target/
+dist/
 *.user
 *.dbf~
 
 qt6-src/
 qt6-build/
 qt6-src.tar.xz
+*.tar.xz
 qt6-static/
 6.8.0/
 /ninja/*.exe
